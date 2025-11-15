@@ -24,6 +24,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Ensure D:\save exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath 'D:\save')) {
+            New-Item -ItemType Directory -Path 'D:\save' -Force | Out-Null
+          }
+
       - name: Restore snapshot to D:\save (optional)
         if: ${{ inputs.snapshot_folder != '' }}
         shell: pwsh
