@@ -2,16 +2,6 @@ name: Windows RDP Server
 
 on:
   workflow_dispatch:
-    inputs:
-      snapshot_folder:
-        description: "Snapshot folder name under snapshots/ to restore to D:\\save (leave empty to skip)"
-        required: false
-        type: string
-      save_on_exit:
-        description: "Save D:\\save to vm-snapshots once when shutdown flag is created"
-        required: false
-        default: true
-        type: boolean
 
 jobs:
   secure-rdp:
@@ -34,13 +24,6 @@ jobs:
       - name: Install snapshot manager helper on D:\
         shell: pwsh
         run: .github/workflows/scripts/install-save-manager.ps1
-
-      - name: Restore snapshot to D:\save (optional)
-        if: ${{ inputs.snapshot_folder != '' }}
-        shell: pwsh
-        env:
-          SNAPSHOT_FOLDER: ${{ inputs.snapshot_folder }}
-        run: .github/workflows/scripts/win-restore-snapshot.ps1
 
       - name: Configure Core RDP Settings
         shell: pwsh
@@ -70,7 +53,4 @@ jobs:
 
       - name: Maintain Connection and Save Snapshot
         shell: pwsh
-        env:
-          SAVE_ON_EXIT: ${{ inputs.save_on_exit }}
-          SNAPSHOT_TARGET: ${{ inputs.snapshot_folder }}
         run: .github/workflows/scripts/win-maintain-and-snapshot.ps1

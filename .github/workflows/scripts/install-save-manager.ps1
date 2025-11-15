@@ -18,10 +18,9 @@ $cmdPath = "D:\save-manager.cmd"
 $cmdContent = @"
 @echo off
 set "GITHUB_WORKSPACE=$workspace"
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\pwsh.exe" -NoLogo -ExecutionPolicy Bypass -File "$psScript" %*
+pwsh.exe -NoLogo -ExecutionPolicy Bypass -File "$psScript" %*
 "@
 
 Set-Content -LiteralPath $cmdPath -Value $cmdContent -Encoding ASCII
 
 Write-Host "Created D:\save-manager.cmd. You can run it inside RDP to manage snapshots."
-
