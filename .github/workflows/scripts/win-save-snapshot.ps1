@@ -27,19 +27,6 @@ git config user.email "github-actions[bot]@users.noreply.github.com"
 
 git fetch origin $BranchName 2>$null
 
-# Ensure we are on the snapshot branch (create it if needed)
-git show-ref --verify --quiet "refs/heads/$BranchName"
-if ($LASTEXITCODE -eq 0) {
-    git checkout $BranchName
-} else {
-    git ls-remote --exit-code origin "refs/heads/$BranchName" 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        git checkout -b $BranchName origin/$BranchName
-    } else {
-        git checkout -b $BranchName
-    }
-}
-
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotRelative = "snapshots/$timestamp"
 $snapshotDir = Join-Path $repoDir $snapshotRelative
@@ -65,7 +52,7 @@ if ($commitExit -ne 0) {
     Write-Host "No changes to commit for snapshot (directory unchanged)."
 }
 
-git push origin $BranchName
+git push origin HEAD:refs/heads/$BranchName
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to push snapshot branch '$BranchName' to origin."
 }
