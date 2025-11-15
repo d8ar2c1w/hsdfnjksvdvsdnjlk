@@ -96,6 +96,134 @@ function Invoke-SnapshotRestore {
     }
 }
 
+function Invoke-SnapshotDelete {
+    param(
+        [string]$Name
+    )
+
+    Ensure-Repo
+
+    if (-not $Name) {
+        Write-Host "快照名称不能为空，已取消删除。"
+        return
+    }
+
+    $name = $Name.Trim()
+
+    Push-Location $RepoDir
+    try {
+        git fetch origin $BranchName 2>$null | Out-Null
+
+        git ls-remote --exit-code origin "refs/heads/$BranchName" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "分支 '$BranchName' 不存在，无法删除快照。"
+            return
+        }
+
+        git restore --source "origin/$BranchName" -- "snapshots" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "无法从分支 '$BranchName' 恢复 snapshots 目录，删除失败。"
+            return
+        }
+
+        $targetPath = Join-Path $RepoDir ("snapshots\{0}" -f $name)
+        if (-not (Test-Path -LiteralPath $targetPath)) {
+            Write-Host "快照 'snapshots/$name' 不存在。"
+            return
+        }
+
+        Remove-Item -LiteralPath $targetPath -Recurse -Force
+
+        git add "snapshots"
+        git commit -m "Delete snapshot $name" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "没有变化需要提交，可能快照已被删除。"
+        }
+
+        git push origin HEAD:refs/heads/$BranchName --force-with-lease="refs/heads/$BranchName"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "推送分支 '$BranchName' 失败，删除可能未生效。"
+        }
+        else {
+            Write-Host "已删除快照 '$name' 并推送到分支 '$BranchName'。"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Invoke-SnapshotRename {
+    param(
+        [string]$OldName,
+        [string]$NewName
+    )
+
+    Ensure-Repo
+
+    if (-not $OldName -or -not $NewName) {
+        Write-Host "旧名称和新名称都不能为空，已取消重命名。"
+        return
+    }
+
+    $old = $OldName.Trim()
+    $new = $NewName.Trim()
+
+    if ($old -eq $new) {
+        Write-Host "旧名称和新名称相同，无需重命名。"
+        return
+    }
+
+    Push-Location $RepoDir
+    try {
+        git fetch origin $BranchName 2>$null | Out-Null
+
+        git ls-remote --exit-code origin "refs/heads/$BranchName" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "分支 '$BranchName' 不存在，无法重命名快照。"
+            return
+        }
+
+        git restore --source "origin/$BranchName" -- "snapshots" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "无法从分支 '$BranchName' 恢复 snapshots 目录，重命名失败。"
+            return
+        }
+
+        $oldPath = Join-Path $RepoDir ("snapshots\{0}" -f $old)
+        $newPath = Join-Path $RepoDir ("snapshots\{0}" -f $new)
+
+        if (-not (Test-Path -LiteralPath $oldPath)) {
+            Write-Host "快照 'snapshots/$old' 不存在，无法重命名。"
+            return
+        }
+
+        if (Test-Path -LiteralPath $newPath) {
+            Write-Host "目标快照 'snapshots/$new' 已存在，无法重命名。"
+            return
+        }
+
+        Move-Item -LiteralPath $oldPath -Destination $newPath
+
+        git add "snapshots"
+        git commit -m "Rename snapshot $old to $new" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "没有变化需要提交，重命名可能未生效。"
+        }
+
+        git push origin HEAD:refs/heads/$BranchName --force-with-lease="refs/heads/$BranchName"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "推送分支 '$BranchName' 失败，重命名可能未生效。"
+        }
+        else {
+            Write-Host "已将快照 '$old' 重命名为 '$new' 并推送到分支 '$BranchName'。"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Stop-ProcessesUsingSave {
     Write-Host "正在扫描可执行文件位于 $SaveDir 下的进程..."
 
@@ -170,6 +298,8 @@ while ($true) {
     Write-Host "  1) 列出已有快照"
     Write-Host "  2) 将当前 D:\save 保存到指定快照（可新建）"
     Write-Host "  3) 从指定快照还原到 D:\save（会删除多余文件）"
+     Write-Host "  4) 删除指定快照目录"
+     Write-Host "  5) 重命名快照目录"
     Write-Host "  Q) 退出"
 
     $choice = Read-Host "请输入选项"
@@ -208,6 +338,42 @@ while ($true) {
                 Write-Host "未提供快照名称，未执行还原。"
             }
         }
+        '4' {
+            Show-SnapshotList
+            $name = Read-Host "输入要删除的快照名称"
+            if ($name) {
+                $confirm = Read-Host "确认要删除快照 '$name' 吗？此操作不可撤销。(y/N)"
+                if ($confirm -match '^(y|Y)$') {
+                    Invoke-SnapshotDelete -Name $name
+                }
+                else {
+                    Write-Host "已取消删除。"
+                }
+            }
+            else {
+                Write-Host "未提供快照名称，未执行删除。"
+            }
+        }
+        '5' {
+            Show-SnapshotList
+            $oldName = Read-Host "输入要重命名的快照名称"
+            if (-not $oldName) {
+                Write-Host "未提供原名称，已取消重命名。"
+                continue
+            }
+            $newName = Read-Host "输入新的快照名称"
+            if (-not $newName) {
+                Write-Host "未提供新名称，已取消重命名。"
+                continue
+            }
+            $confirm = Read-Host "确认将快照 '$oldName' 重命名为 '$newName' 吗？(y/N)"
+            if ($confirm -match '^(y|Y)$') {
+                Invoke-SnapshotRename -OldName $oldName -NewName $newName
+            }
+            else {
+                Write-Host "已取消重命名。"
+            }
+        }
         'q' { break }
         'Q' { break }
         default {
@@ -215,4 +381,3 @@ while ($true) {
         }
     }
 }
-
