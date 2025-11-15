@@ -32,8 +32,13 @@ function Get-SaveDirectoryHash {
     $sb = New-Object System.Text.StringBuilder
     foreach ($file in $files) {
         $relativePath = $file.FullName.Substring($Path.Length).TrimStart('\')
-        $fileHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-        [void]$sb.AppendLine("$relativePath`:$fileHash")
+        try {
+            $fileHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash
+            [void]$sb.AppendLine("$relativePath`:$fileHash")
+        }
+        catch {
+            Write-Warning "Failed to hash file '$($file.FullName)'; skipping. $_"
+        }
     }
 
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
