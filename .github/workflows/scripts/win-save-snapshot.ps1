@@ -25,7 +25,6 @@ Set-Location -LiteralPath $repoDir
 
 # Best-effort cleanup of stale Git lock files to avoid interactive prompts
 $lockFiles = @(
-    ".git\index.lock",
     ".git\config.lock",
     ".git\HEAD.lock"
 ) | ForEach-Object { Join-Path $repoDir $_ }
@@ -43,6 +42,9 @@ foreach ($lock in $lockFiles) {
 
 # Avoid any interactive Git prompts
 $env:GIT_TERMINAL_PROMPT = "0"
+
+# Use a dedicated index file for snapshot operations to avoid conflicts
+$env:GIT_INDEX_FILE = Join-Path $repoDir ".git\vm-snapshots.index"
 
 $env:GIT_AUTHOR_NAME  = "github-actions[bot]"
 $env:GIT_AUTHOR_EMAIL = "github-actions[bot]@users.noreply.github.com"
