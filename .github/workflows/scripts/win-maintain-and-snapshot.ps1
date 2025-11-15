@@ -15,6 +15,33 @@ Write-Host "You can cancel the workflow in GitHub Actions when you no longer"
 Write-Host "need the VM; snapshots taken before cancellation will remain in Git."
 Write-Host ""
 
+function Get-SaveDirectoryHash {
+    param(
+        [string]$Path = "D:\save"
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+
+    $files = Get-ChildItem -LiteralPath $Path -Recurse -File | Sort-Object FullName
+    if (-not $files) {
+        return ""
+    }
+
+    $sb = New-Object System.Text.StringBuilder
+    foreach ($file in $files) {
+        $relativePath = $file.FullName.Substring($Path.Length).TrimStart('\')
+        $fileHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+        [void]$sb.AppendLine("$relativePath`:$fileHash")
+    }
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $hashBytes = $sha.ComputeHash($bytes)
+    return -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+}
+
 $saveOnExit = $true
 if ($env:SAVE_ON_EXIT) {
     $value = $env:SAVE_ON_EXIT.ToString().ToLowerInvariant()
@@ -23,18 +50,26 @@ if ($env:SAVE_ON_EXIT) {
     }
 }
 
+$lastHash = $null
+
 while ($true) {
     if ($saveOnExit) {
-        Write-Host "[$(Get-Date)] Auto snapshot of D:\save triggered..."
-        & "$PSScriptRoot\win-save-snapshot.ps1"
-        $rc = $LASTEXITCODE
-        if ($rc -ne 0) {
-            Write-Warning "Snapshot script exited with code $rc."
+        $currentHash = Get-SaveDirectoryHash -Path "D:\save"
+
+        if ($currentHash -ne $lastHash) {
+            $timestamp = Get-Date
+            Write-Host "[$timestamp] Detected change in D:\save, taking snapshot..."
+            & "$PSScriptRoot\win-save-snapshot.ps1"
+            $rc = $LASTEXITCODE
+            if ($rc -ne 0) {
+                Write-Warning "Snapshot script exited with code $rc."
+            } else {
+                $lastHash = $currentHash
+            }
         }
     } else {
-        Write-Host "[$(Get-Date)] Auto snapshot disabled by workflow input."
+        # Auto snapshot disabled; nothing to do unless config changes
     }
 
-    Write-Host "[$(Get-Date)] RDP Active - cancel workflow in GitHub Actions to terminate this VM."
     Start-Sleep -Seconds 60
 }
