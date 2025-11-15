@@ -23,15 +23,10 @@ if ($LASTEXITCODE -ne 0) {
     exit 0
 }
 
-git cat-file -e "origin/$BranchName:snapshots/$SnapshotFolder" 2>$null
-if ($LASTEXITCODE -ne 0) {
-    Write-Warning "Snapshot 'snapshots/$SnapshotFolder' not found in branch '$BranchName'."
-    exit 0
-}
-
 git restore --source "origin/$BranchName" -- "snapshots/$SnapshotFolder"
 if ($LASTEXITCODE -ne 0) {
-    throw "Failed to restore snapshot folder 'snapshots/$SnapshotFolder' into workspace."
+    Write-Warning "Snapshot 'snapshots/$SnapshotFolder' not found in origin/$BranchName."
+    exit 0
 }
 
 $sourceDir = Join-Path $repoDir "snapshots\$SnapshotFolder"
@@ -52,3 +47,5 @@ if ($rc -ge 8) {
 }
 
 Write-Host "Snapshot '$SnapshotFolder' successfully restored to '$SaveDirectory'."
+
+exit 0
