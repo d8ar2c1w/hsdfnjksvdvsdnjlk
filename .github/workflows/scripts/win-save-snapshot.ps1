@@ -52,8 +52,9 @@ git add $snapshotDir
 
 $commitMsg = "Snapshot $timestamp from $SaveDirectory"
 git commit -m $commitMsg 2>$null
+$commitExit = $LASTEXITCODE
 
-if ($LASTEXITCODE -ne 0) {
+if ($commitExit -ne 0) {
     Write-Host "No changes to commit for snapshot (directory unchanged)."
 } else {
     git push origin $BranchName
@@ -61,3 +62,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+exit 0
