@@ -81,7 +81,10 @@ if ($rc -ge 8) {
     throw "Robocopy failed with exit code $rc while copying snapshot."
 }
 
-git add $snapshotDir
+git add $snapshotRelative
+if ($LASTEXITCODE -ne 0) {
+    throw "git add failed for path '$snapshotRelative'."
+}
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $commitMsg = "Snapshot $timestamp from $SaveDirectory"
