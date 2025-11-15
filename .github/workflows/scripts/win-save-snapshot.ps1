@@ -22,9 +22,10 @@ if (-not $files) {
 }
 
 Set-Location -LiteralPath $repoDir
-
-git config user.name  "github-actions[bot]"
-git config user.email "github-actions[bot]@users.noreply.github.com"
+$env:GIT_AUTHOR_NAME  = "github-actions[bot]"
+$env:GIT_AUTHOR_EMAIL = "github-actions[bot]@users.noreply.github.com"
+$env:GIT_COMMITTER_NAME  = $env:GIT_AUTHOR_NAME
+$env:GIT_COMMITTER_EMAIL = $env:GIT_AUTHOR_EMAIL
 
 git fetch origin $BranchName 2>$null
 
