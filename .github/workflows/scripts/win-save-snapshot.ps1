@@ -86,16 +86,27 @@ if ($LASTEXITCODE -ne 0) {
     throw "git add failed for path '$snapshotRelative'."
 }
 
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$commitMsg = "Snapshot $timestamp from $SaveDirectory"
-git commit -m $commitMsg 2>$null
-$commitExit = $LASTEXITCODE
-if ($commitExit -ne 0) {
-    Write-Host "No changes to commit for snapshot (directory unchanged). Skipping push."
+# 检查是否真的有快照变更被 staged
+git diff --cached --quiet -- $snapshotRelative
+$diffExit = $LASTEXITCODE
+if ($diffExit -eq 0) {
+    Write-Host "No staged changes for snapshot '$SnapshotTarget' (directory unchanged or empty). Skipping commit and push."
     if ($env:GITHUB_ENV) {
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
         "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     }
     exit 0
+}
+elseif ($diffExit -ne 1) {
+    throw "git diff --cached failed with exit code $diffExit for path '$snapshotRelative'."
+}
+
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$commitMsg = "Snapshot $timestamp from $SaveDirectory"
+git commit -m $commitMsg
+$commitExit = $LASTEXITCODE
+if ($commitExit -ne 0) {
+    throw "git commit failed with exit code $commitExit for snapshot '$SnapshotTarget'."
 }
 
 git push origin HEAD:refs/heads/$BranchName --force
