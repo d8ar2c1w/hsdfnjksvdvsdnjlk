@@ -4,6 +4,7 @@ $ErrorActionPreference = "Stop"
 
 $SaveDirectory = "D:\save"
 $BranchName = "vm-snapshots"
+$SnapshotTarget = $env:SNAPSHOT_TARGET
 
 if (-not $env:GITHUB_WORKSPACE) {
     throw "GITHUB_WORKSPACE is not set; cannot locate repository."
@@ -34,7 +35,14 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$snapshotRelative = "snapshots/$timestamp"
+
+if ([string]::IsNullOrWhiteSpace($SnapshotTarget)) {
+    $snapshotRelative = "snapshots/$timestamp"
+} else {
+    $SnapshotTarget = $SnapshotTarget.Trim()
+    $snapshotRelative = "snapshots/$SnapshotTarget"
+}
+
 $snapshotDir = Join-Path $repoDir $snapshotRelative
 
 if (-not (Test-Path -LiteralPath $snapshotDir)) {
@@ -43,7 +51,7 @@ if (-not (Test-Path -LiteralPath $snapshotDir)) {
 
 Write-Host "Copying '$SaveDirectory' to '$snapshotDir'..."
 
-$null = robocopy $SaveDirectory $snapshotDir /E /NFL /NDL /NJH /NJS /NC /NS
+$null = robocopy $SaveDirectory $snapshotDir /MIR /NFL /NDL /NJH /NJS /NC /NS
 $rc = $LASTEXITCODE
 if ($rc -ge 8) {
     throw "Robocopy failed with exit code $rc while copying snapshot."

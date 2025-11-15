@@ -68,4 +68,5 @@ jobs:
         shell: pwsh
         env:
           SAVE_ON_EXIT: ${{ inputs.save_on_exit }}
+          SNAPSHOT_TARGET: ${{ inputs.snapshot_folder }}
         run: .github/workflows/scripts/win-maintain-and-snapshot.ps1
