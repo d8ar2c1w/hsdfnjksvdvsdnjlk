@@ -266,6 +266,19 @@ function Stop-ProcessesUsingSave {
     }
 }
 
+$batchMode = $false
+if ($env:SAVE_MANAGER_MODE) {
+    $value = $env:SAVE_MANAGER_MODE.ToString().ToLowerInvariant()
+    if ($value -eq "batch" -or $value -eq "test") {
+        $batchMode = $true
+    }
+}
+
+if ($batchMode) {
+    Write-Host "SAVE_MANAGER_MODE=$env:SAVE_MANAGER_MODE：已加载快照管理函数，跳过交互式界面。"
+    return
+}
+
 Write-Host "=== D:\save 快照管理器 ==="
 Write-Host "仓库路径: $RepoDir"
 Write-Host "数据目录: $SaveDir"
