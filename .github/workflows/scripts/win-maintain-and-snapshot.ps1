@@ -26,7 +26,7 @@ function Get-SaveDirectoryHash {
 
     $files = Get-ChildItem -LiteralPath $Path -Recurse -File | Sort-Object FullName
     if (-not $files) {
-        return ""
+        return $null
     }
 
     $sb = New-Object System.Text.StringBuilder
@@ -56,9 +56,7 @@ while ($true) {
     if ($saveOnExit) {
         $currentHash = Get-SaveDirectoryHash -Path "D:\save"
 
-        if ($currentHash -ne $lastHash) {
-            $timestamp = Get-Date
-            Write-Host "[$timestamp] Detected change in D:\save, taking snapshot..."
+        if ($null -ne $currentHash -and $currentHash -ne $lastHash) {
             & "$PSScriptRoot\win-save-snapshot.ps1"
             $rc = $LASTEXITCODE
             if ($rc -ne 0) {

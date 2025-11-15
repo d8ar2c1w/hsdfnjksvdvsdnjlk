@@ -12,11 +12,13 @@ if (-not $env:GITHUB_WORKSPACE) {
 $repoDir = $env:GITHUB_WORKSPACE
 
 if (-not (Test-Path -LiteralPath $SaveDirectory)) {
-    Write-Host "Save directory '$SaveDirectory' does not exist. Skipping snapshot."
     exit 0
 }
 
-Write-Host "Preparing to snapshot '$SaveDirectory' into branch '$BranchName'..."
+$files = Get-ChildItem -LiteralPath $SaveDirectory -Recurse -File
+if (-not $files) {
+    exit 0
+}
 
 Set-Location -LiteralPath $repoDir
 
@@ -69,9 +71,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($commitExit -eq 0) {
-    Write-Host "Snapshot committed and pushed to '$BranchName' at '$snapshotRelative'."
-} else {
-    Write-Host "Snapshot branch '$BranchName' pushed (no new commit this run)."
+    foreach ($file in $files) {
+        $relative = $file.FullName.Substring($SaveDirectory.Length).TrimStart('\')
+        Write-Host "$relative 已保存"
+    }
 }
 
 "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
