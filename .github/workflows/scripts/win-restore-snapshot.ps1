@@ -2,16 +2,9 @@
 
 $ErrorActionPreference = "Stop"
 
-param(
-    [string]$SaveDirectory = "D:\save",
-    [string]$BranchName = "vm-snapshots",
-    [string]$SnapshotFolder = $env:SNAPSHOT_FOLDER
-)
-
-if (-not $SnapshotFolder) {
-    Write-Host "No snapshot folder specified. Skipping restore."
-    exit 0
-}
+$SaveDirectory  = "D:\save"
+$BranchName     = "vm-snapshots"
+$SnapshotFolder = $env:SNAPSHOT_FOLDER
 
 if (-not $env:GITHUB_WORKSPACE) {
     throw "GITHUB_WORKSPACE is not set; cannot locate repository."
@@ -20,7 +13,9 @@ if (-not $env:GITHUB_WORKSPACE) {
 $repoDir = $env:GITHUB_WORKSPACE
 Set-Location -LiteralPath $repoDir
 
-Write-Host "Attempting to restore snapshot '$SnapshotFolder' from branch '$BranchName' to '$SaveDirectory'..."
+if (-not $SnapshotFolder) {
+    exit 0
+}
 
 git fetch origin $BranchName 2>$null
 if ($LASTEXITCODE -ne 0) {
@@ -57,4 +52,3 @@ if ($rc -ge 8) {
 }
 
 Write-Host "Snapshot '$SnapshotFolder' successfully restored to '$SaveDirectory'."
-
