@@ -26,7 +26,7 @@ catch {
             Add-WindowsCapability -Online -Name $cap -ErrorAction SilentlyContinue | Out-Null
         }
         catch {
-            Write-Warning "Failed to add capability $cap: $_"
+            Write-Warning ("Failed to add capability {0}: {1}" -f $cap, $_)
         }
     }
 }
@@ -75,4 +75,3 @@ catch {
 }
 
 Write-Host "Chinese (Simplified, China) language configuration completed. Some UI text may require a new session to fully apply."
-
