@@ -42,7 +42,8 @@ if ($existing) {
 
 # Prefer a simple, fixed password if allowed by policy
 # You can also override via env var RDP_PASSWORD
-$preferredPassword = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "linjinpeng888" }
+# NOTE: Password must satisfy Windows complexity policy on GitHub runners.
+$preferredPassword = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "Linjinpeng888!" }
 
 $plainPassword = $preferredPassword
 $securePassword = ConvertTo-SecureString $plainPassword -AsPlainText -Force
