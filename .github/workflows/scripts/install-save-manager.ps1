@@ -14,13 +14,14 @@ if (-not (Test-Path -LiteralPath $psScript)) {
 }
 
 $cmdPath = "D:\save-manager.cmd"
+$guiScript = Join-Path $workspace ".github\workflows\scripts\save_manager_gui.py"
 
 $cmdContent = @"
 @echo off
 set "GITHUB_WORKSPACE=$workspace"
-pwsh.exe -NoLogo -ExecutionPolicy Bypass -File "$psScript" %*
+python "$guiScript"
 "@
 
 Set-Content -LiteralPath $cmdPath -Value $cmdContent -Encoding ASCII
 
-Write-Host "Created D:\save-manager.cmd. You can run it inside RDP to manage snapshots."
+Write-Host "Created D:\save-manager.cmd. Run it inside RDP to open the snapshot GUI."
