@@ -40,7 +40,7 @@ if (-not (Test-Path -LiteralPath $SaveDirectory)) {
 
 Write-Host "Copying snapshot from '$sourceDir' to '$SaveDirectory'..."
 
-$null = robocopy $sourceDir $SaveDirectory /E /NFL /NDL /NJH /NJS /NC /NS
+$null = robocopy $sourceDir $SaveDirectory /MIR /NFL /NDL /NJH /NJS /NC /NS
 $rc = $LASTEXITCODE
 if ($rc -ge 8) {
     throw "Robocopy failed with exit code $rc while restoring snapshot."
