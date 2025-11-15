@@ -34,14 +34,13 @@ if ($LASTEXITCODE -eq 0) {
     git restore --source "origin/$BranchName" -- "snapshots" 2>$null
 }
 
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-
 if ([string]::IsNullOrWhiteSpace($SnapshotTarget)) {
-    $snapshotRelative = "snapshots/$timestamp"
-} else {
-    $SnapshotTarget = $SnapshotTarget.Trim()
-    $snapshotRelative = "snapshots/$SnapshotTarget"
+    Write-Host "SNAPSHOT_TARGET is not set or empty. Skipping snapshot."
+    exit 0
 }
+
+$SnapshotTarget = $SnapshotTarget.Trim()
+$snapshotRelative = "snapshots/$SnapshotTarget"
 
 $snapshotDir = Join-Path $repoDir $snapshotRelative
 

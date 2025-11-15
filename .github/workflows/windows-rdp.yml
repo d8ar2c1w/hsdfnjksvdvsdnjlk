@@ -31,6 +31,10 @@ jobs:
             New-Item -ItemType Directory -Path 'D:\save' -Force | Out-Null
           }
 
+      - name: Install snapshot manager helper on D:\
+        shell: pwsh
+        run: .github/workflows/scripts/install-save-manager.ps1
+
       - name: Restore snapshot to D:\save (optional)
         if: ${{ inputs.snapshot_folder != '' }}
         shell: pwsh
