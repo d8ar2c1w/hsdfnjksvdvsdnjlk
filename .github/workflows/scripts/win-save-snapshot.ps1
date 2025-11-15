@@ -22,6 +22,28 @@ if (-not $files) {
 }
 
 Set-Location -LiteralPath $repoDir
+
+# Best-effort cleanup of stale Git lock files to avoid interactive prompts
+$lockFiles = @(
+    ".git\index.lock",
+    ".git\config.lock",
+    ".git\HEAD.lock"
+) | ForEach-Object { Join-Path $repoDir $_ }
+
+foreach ($lock in $lockFiles) {
+    if (Test-Path -LiteralPath $lock) {
+        try {
+            Remove-Item -LiteralPath $lock -Force -ErrorAction Stop
+        }
+        catch {
+            Write-Warning "Failed to remove stale Git lock file '$lock': $_"
+        }
+    }
+}
+
+# Avoid any interactive Git prompts
+$env:GIT_TERMINAL_PROMPT = "0"
+
 $env:GIT_AUTHOR_NAME  = "github-actions[bot]"
 $env:GIT_AUTHOR_EMAIL = "github-actions[bot]@users.noreply.github.com"
 $env:GIT_COMMITTER_NAME  = $env:GIT_AUTHOR_NAME
@@ -59,6 +81,7 @@ if ($rc -ge 8) {
 
 git add $snapshotDir
 
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $commitMsg = "Snapshot $timestamp from $SaveDirectory"
 git commit -m $commitMsg 2>$null
 $commitExit = $LASTEXITCODE
@@ -78,6 +101,8 @@ if ($commitExit -eq 0) {
     }
 }
 
-"SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+if ($env:GITHUB_ENV) {
+    "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+}
 
 exit 0
