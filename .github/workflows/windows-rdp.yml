@@ -8,7 +8,7 @@ on:
         required: false
         type: string
       save_on_exit:
-        description: "Automatically snapshot D:\\save to vm-snapshots every minute"
+        description: "Save D:\\save to vm-snapshots once when shutdown flag is created"
         required: false
         default: true
         type: boolean
