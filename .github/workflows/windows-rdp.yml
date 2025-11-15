@@ -33,10 +33,6 @@ jobs:
         shell: pwsh
         run: .github/workflows/scripts/win-create-user.ps1
 
-      - name: Set Windows language to Chinese (zh-CN)
-        shell: pwsh
-        run: .github/workflows/scripts/win-set-language-zhcn.ps1
-
       - name: Install Tailscale
         shell: pwsh
         run: .github/workflows/scripts/win-install-tailscale.ps1
