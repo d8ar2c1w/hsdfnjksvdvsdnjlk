@@ -27,6 +27,12 @@ git config user.email "github-actions[bot]@users.noreply.github.com"
 
 git fetch origin $BranchName 2>$null
 
+# Bring existing snapshots tree from vm-snapshots branch into the working tree (if it exists)
+git ls-remote --exit-code origin "refs/heads/$BranchName" 2>$null
+if ($LASTEXITCODE -eq 0) {
+    git restore --source "origin/$BranchName" -- "snapshots" 2>$null
+}
+
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotRelative = "snapshots/$timestamp"
 $snapshotDir = Join-Path $repoDir $snapshotRelative
@@ -52,7 +58,7 @@ if ($commitExit -ne 0) {
     Write-Host "No changes to commit for snapshot (directory unchanged)."
 }
 
-git push origin HEAD:refs/heads/$BranchName
+git push origin HEAD:refs/heads/$BranchName --force-with-lease="refs/heads/$BranchName"
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to push snapshot branch '$BranchName' to origin."
 }
