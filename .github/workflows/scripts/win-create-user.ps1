@@ -42,7 +42,7 @@ if ($existing) {
 
 # Prefer a simple, fixed password if allowed by policy
 # You can also override via env var RDP_PASSWORD
-$preferredPassword = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "123456" }
+$preferredPassword = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "linjinpeng888" }
 
 $plainPassword = $preferredPassword
 $securePassword = ConvertTo-SecureString $plainPassword -AsPlainText -Force
@@ -70,7 +70,7 @@ catch {
         -AccountNeverExpires `
         -PasswordNeverExpires `
         -FullName "GitHub Actions RDP User" `
-        -Description "User for GitHub Actions RDP session (complex password)"
+        -Description "GitHub Actions RDP user"
 
     Write-Host "User created with a complex, policy-compliant password."
 }
