@@ -9,11 +9,10 @@ Write-Host "Password: $env:RDP_CREDS"
 Write-Host "==================`n"
 
 Write-Host "D:\save will be used as the persistent workspace."
-Write-Host "To trigger shutdown and snapshot:"
-Write-Host "  1. Inside the RDP session, ensure D:\save exists."
-Write-Host "  2. Create the file D:\save\.shutdown when you are finished."
-Write-Host "This workflow will detect the flag, snapshot D:\save (if enabled),"
-Write-Host "and then terminate, destroying the VM but keeping your data in Git."
+Write-Host "This workflow will automatically snapshot D:\save to branch 'vm-snapshots'"
+Write-Host "approximately once per minute (if enabled by the workflow input)."
+Write-Host "You can cancel the workflow in GitHub Actions when you no longer"
+Write-Host "need the VM; snapshots taken before cancellation will remain in Git."
 Write-Host ""
 
 $saveOnExit = $true
@@ -24,29 +23,18 @@ if ($env:SAVE_ON_EXIT) {
     }
 }
 
-$saveDir = "D:\save"
-$shutdownFlag = Join-Path $saveDir ".shutdown"
-
 while ($true) {
-    if (Test-Path -LiteralPath $shutdownFlag) {
-        Write-Host "Shutdown flag detected at '$shutdownFlag'."
-
-        if ($saveOnExit) {
-            Write-Host "SAVE_ON_EXIT is true. Saving snapshot of '$saveDir'..."
-            & "$PSScriptRoot\win-save-snapshot.ps1"
-            $rc = $LASTEXITCODE
-            if ($rc -ne 0) {
-                Write-Warning "Snapshot script exited with code $rc."
-            }
-        } else {
-            Write-Host "SAVE_ON_EXIT is false; skipping snapshot."
+    if ($saveOnExit) {
+        Write-Host "[$(Get-Date)] Auto snapshot of D:\save triggered..."
+        & "$PSScriptRoot\win-save-snapshot.ps1"
+        $rc = $LASTEXITCODE
+        if ($rc -ne 0) {
+            Write-Warning "Snapshot script exited with code $rc."
         }
-
-        Write-Host "Exiting maintain loop and allowing workflow to finish."
-        break
+    } else {
+        Write-Host "[$(Get-Date)] Auto snapshot disabled by workflow input."
     }
 
-    Write-Host "[$(Get-Date)] RDP Active - create D:\save\.shutdown to save and terminate, or cancel workflow to force stop."
+    Write-Host "[$(Get-Date)] RDP Active - cancel workflow in GitHub Actions to terminate this VM."
     Start-Sleep -Seconds 60
 }
-
