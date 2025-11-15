@@ -88,10 +88,14 @@ $commitMsg = "Snapshot $timestamp from $SaveDirectory"
 git commit -m $commitMsg 2>$null
 $commitExit = $LASTEXITCODE
 if ($commitExit -ne 0) {
-    Write-Host "No changes to commit for snapshot (directory unchanged)."
+    Write-Host "No changes to commit for snapshot (directory unchanged). Skipping push."
+    if ($env:GITHUB_ENV) {
+        "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    }
+    exit 0
 }
 
-git push origin HEAD:refs/heads/$BranchName --force-with-lease="refs/heads/$BranchName"
+git push origin HEAD:refs/heads/$BranchName --force
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to push snapshot branch '$BranchName' to origin."
 }
