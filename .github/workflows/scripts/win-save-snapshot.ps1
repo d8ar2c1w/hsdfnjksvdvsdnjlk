@@ -2,10 +2,8 @@
 
 $ErrorActionPreference = "Stop"
 
-param(
-    [string]$SaveDirectory = "D:\save",
-    [string]$BranchName = "vm-snapshots"
-)
+$SaveDirectory = "D:\save"
+$BranchName = "vm-snapshots"
 
 if (-not $env:GITHUB_WORKSPACE) {
     throw "GITHUB_WORKSPACE is not set; cannot locate repository."
@@ -63,4 +61,3 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 "SNAPSHOT_TIMESTAMP=$timestamp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
