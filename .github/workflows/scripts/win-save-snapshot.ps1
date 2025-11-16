@@ -45,8 +45,10 @@ foreach ($lock in $lockFiles) {
 # Avoid any interactive Git prompts
 $env:GIT_TERMINAL_PROMPT = "0"
 
-# Disable reflog to avoid permission issues with .git/logs
-git config --local core.logAllRefUpdates false
+# Disable reflog via environment variable to avoid permission issues with .git/logs
+$env:GIT_CONFIG_COUNT = "1"
+$env:GIT_CONFIG_KEY_0 = "core.logAllRefUpdates"
+$env:GIT_CONFIG_VALUE_0 = "false"
 
 # Use a dedicated index file for snapshot operations to avoid conflicts
 $env:GIT_INDEX_FILE = Join-Path $repoDir ".git\vm-snapshots.index"
