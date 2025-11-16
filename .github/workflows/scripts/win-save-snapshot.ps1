@@ -26,7 +26,9 @@ Set-Location -LiteralPath $repoDir
 # Best-effort cleanup of stale Git lock files to avoid interactive prompts
 $lockFiles = @(
     ".git\config.lock",
-    ".git\HEAD.lock"
+    ".git\HEAD.lock",
+    ".git\logs\HEAD.lock",
+    ".git\logs\refs\heads\vm-snapshots.lock"
 ) | ForEach-Object { Join-Path $repoDir $_ }
 
 foreach ($lock in $lockFiles) {
@@ -37,6 +39,21 @@ foreach ($lock in $lockFiles) {
         catch {
             Write-Warning "Failed to remove stale Git lock file '$lock': $_"
         }
+    }
+}
+
+# 确保 .git/logs 目录及其子目录有写入权限
+$logsDir = Join-Path $repoDir ".git\logs"
+if (Test-Path -LiteralPath $logsDir) {
+    try {
+        $acl = Get-Acl -LiteralPath $logsDir
+        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $acl.SetAccessRule($rule)
+        Set-Acl -LiteralPath $logsDir -AclObject $acl
+    }
+    catch {
+        Write-Warning "Failed to set permissions on .git/logs directory: $_"
     }
 }
 
