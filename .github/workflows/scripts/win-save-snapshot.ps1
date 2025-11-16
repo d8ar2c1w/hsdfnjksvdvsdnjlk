@@ -42,13 +42,30 @@ foreach ($lock in $lockFiles) {
     }
 }
 
+# Disable reflog in local config to avoid touching .git/logs/*
+try {
+    git config core.logAllRefUpdates false 2>$null
+}
+catch {
+    Write-Warning "Failed to disable reflog via git config: $_"
+}
+
+# Ensure HEAD reflog is not read-only (some environments may create it with restrictive attributes)
+$headReflogPath = Join-Path $repoDir ".git\logs\HEAD"
+if (Test-Path -LiteralPath $headReflogPath) {
+    try {
+        $headItem = Get-Item -LiteralPath $headReflogPath -ErrorAction Stop
+        if ($headItem.Attributes -band [System.IO.FileAttributes]::ReadOnly) {
+            $headItem.Attributes = $headItem.Attributes -bxor [System.IO.FileAttributes]::ReadOnly
+        }
+    }
+    catch {
+        Write-Warning "Failed to adjust attributes for '$headReflogPath': $_"
+    }
+}
+
 # Avoid any interactive Git prompts
 $env:GIT_TERMINAL_PROMPT = "0"
-
-# Disable reflog via environment variable to avoid permission issues with .git/logs
-$env:GIT_CONFIG_COUNT = "1"
-$env:GIT_CONFIG_KEY_0 = "core.logAllRefUpdates"
-$env:GIT_CONFIG_VALUE_0 = "false"
 
 # Use a dedicated index file for snapshot operations to avoid conflicts
 $env:GIT_INDEX_FILE = Join-Path $repoDir ".git\vm-snapshots.index"
