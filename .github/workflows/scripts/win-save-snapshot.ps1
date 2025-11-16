@@ -42,23 +42,11 @@ foreach ($lock in $lockFiles) {
     }
 }
 
-# 确保 .git/logs 目录及其子目录有写入权限
-$logsDir = Join-Path $repoDir ".git\logs"
-if (Test-Path -LiteralPath $logsDir) {
-    try {
-        $acl = Get-Acl -LiteralPath $logsDir
-        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($currentUser, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-        $acl.SetAccessRule($rule)
-        Set-Acl -LiteralPath $logsDir -AclObject $acl
-    }
-    catch {
-        Write-Warning "Failed to set permissions on .git/logs directory: $_"
-    }
-}
-
 # Avoid any interactive Git prompts
 $env:GIT_TERMINAL_PROMPT = "0"
+
+# Disable reflog to avoid permission issues with .git/logs
+git config --local core.logAllRefUpdates false
 
 # Use a dedicated index file for snapshot operations to avoid conflicts
 $env:GIT_INDEX_FILE = Join-Path $repoDir ".git\vm-snapshots.index"
