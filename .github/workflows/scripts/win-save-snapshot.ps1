@@ -99,10 +99,30 @@ if (-not (Test-Path -LiteralPath $snapshotDir)) {
 
 Write-Host "Copying '$SaveDirectory' to '$snapshotDir'..."
 
-$null = robocopy $SaveDirectory $snapshotDir /MIR /NFL /NDL /NJH /NJS /NC /NS
-$rc = $LASTEXITCODE
-if ($rc -ge 8) {
-    throw "Robocopy failed with exit code $rc while copying snapshot."
+# 尝试使用 VSS 进行热备份（支持被占用的文件）
+$vssCopyScript = Join-Path $PSScriptRoot "vss-copy.ps1"
+$useVss = $false
+
+if (Test-Path -LiteralPath $vssCopyScript) {
+    try {
+        Write-Host "尝试使用 VSS 热备份..."
+        & $vssCopyScript -SourcePath $SaveDirectory -DestinationPath $snapshotDir
+        $useVss = $true
+        Write-Host "VSS 热备份成功。"
+    }
+    catch {
+        Write-Warning "VSS 备份失败，回退到普通复制: $_"
+    }
+}
+
+if (-not $useVss) {
+    # 回退到普通 robocopy（添加重试机制）
+    Write-Host "使用普通 robocopy 复制..."
+    $null = robocopy $SaveDirectory $snapshotDir /MIR /R:3 /W:5 /NFL /NDL /NJH /NJS /NC /NS
+    $rc = $LASTEXITCODE
+    if ($rc -ge 8) {
+        throw "Robocopy failed with exit code $rc while copying snapshot."
+    }
 }
 
 git add $snapshotRelative

@@ -335,6 +335,7 @@ class SnapshotManagerGUI(tk.Tk):
 
 def main():
     try:
+        configure_git_auth()
         app = SnapshotManagerGUI()
         app.mainloop()
     except Exception as e:

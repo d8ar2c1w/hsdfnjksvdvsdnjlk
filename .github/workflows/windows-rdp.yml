@@ -23,6 +23,8 @@ jobs:
 
       - name: Install snapshot manager helper on D:\
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/workflows/scripts/install-save-manager.ps1
 
       - name: Configure Core RDP Settings
